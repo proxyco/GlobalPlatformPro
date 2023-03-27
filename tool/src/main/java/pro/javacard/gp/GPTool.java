@@ -455,8 +455,7 @@ public final class GPTool extends GPCommandLineInterface implements SimpleSmartC
                         byte[] k = kv.getSymmetric().get();
                         if (k.length != 16)
                             throw new IllegalArgumentException("Invalid key length: " + k.length);
-                        // FIXME: implicit DES currently
-                        gp.putKey(GPCrypto.des3key(k), keyVersion, replace);
+                        gp.putKey(args.has(OPT_PUT_KEY_TYPE_AES) ? GPCrypto.aeskey(k) : GPCrypto.des3key(k), keyVersion, replace);
                     } else {
                         throw new IllegalArgumentException("Only public and symmetric keys are supported for put-key");
                     }

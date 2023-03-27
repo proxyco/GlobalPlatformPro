@@ -104,6 +104,7 @@ abstract class GPCommandLineInterface {
     // Key management
     protected static OptionSpec<Integer> OPT_KEY_VERSION = parser.accepts("key-ver", "Specify key version").withRequiredArg().ofType(Integer.class).withValuesConvertedBy(new HexIntegerConverter()).describedAs("version");
     protected static OptionSpec<Key> OPT_PUT_KEY = parser.accepts("put-key", "Put a new key").withRequiredArg().ofType(Key.class).describedAs("PEM or hex");
+    protected static OptionSpec<Void> OPT_PUT_KEY_TYPE_AES = parser.accepts("key-type-aes", "Specify AES key type. Default is DES.").availableIf(OPT_PUT_KEY);
     protected static OptionSpec<Key> OPT_REPLACE_KEY = parser.accepts("replace-key", "Put a new key, forcing replace").availableUnless(OPT_PUT_KEY).withRequiredArg().ofType(Key.class).describedAs("PEM or hex");
     protected static OptionSpec<Integer> OPT_NEW_KEY_VERSION = parser.accepts("new-keyver", "Key version for the new key").requiredIf(OPT_PUT_KEY, OPT_REPLACE_KEY).withRequiredArg().ofType(Integer.class).withValuesConvertedBy(new HexIntegerConverter()).describedAs("key version");
 

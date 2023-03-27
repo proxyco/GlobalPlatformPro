@@ -865,8 +865,7 @@ public class GPSession {
                 byte[] cgram = dek.encrypt(plaintext, sessionContext);
                 byte[] kcv = GPCrypto.kcv_aes(other);
                 baos.write(GPKey.AES.getType());
-                baos.write(cgram.length + 1); // +1 for actual length
-                baos.write(other.length);
+                baos.write(cgram.length);
                 baos.write(cgram);
                 baos.write(kcv.length);
                 baos.write(kcv);
@@ -994,10 +993,26 @@ public class GPSession {
             bo.write(encodeECKey((ECPublicKey) key));
         } else if (key instanceof SecretKey) {
             SecretKey sk = (SecretKey) key;
+            byte[] encodedKey;
+            int keyLength = sk.getEncoded().length;
             if (sk.getAlgorithm().equals("DESede")) {
-                bo.write(encodeKey(cardKeys, Arrays.copyOf(sk.getEncoded(), 16), GPKey.DES3));
-            } else
-                throw new IllegalArgumentException("Only 3DES symmetric keys are supported: " + sk.getAlgorithm());
+                encodedKey = encodeKey(cardKeys, Arrays.copyOf(sk.getEncoded(), keyLength), GPKey.DES3);
+                bo.write(encodedKey);
+            } else if (sk.getAlgorithm().equals("AES")) {
+                encodedKey = encodeKey(cardKeys, Arrays.copyOf(sk.getEncoded(), keyLength), GPKey.AES);
+                // As long as no Key Set has been successfully created within the Security Domain (including the Issuer Security Domain), 
+                // this parameter shall have a value of '81', indicating that a complete Secure Channel Key Set is being created, 
+                /// otherwise a response of '6A86' shall be returned. [GPC Common Implementation Configuration §5.10.2.2]
+                for (int i = 0; i < 3; i++) {
+                    bo.write(encodedKey);
+                }
+                CommandAPDU command = new CommandAPDU(CLA_GP, INS_PUT_KEY, replace ? version : 0x00, 0x81, bo.toByteArray(), 256);
+                ResponseAPDU response = transmit(command);
+                GPException.check(response, "PUT KEY failed");
+                return;
+            } else {
+                throw new IllegalArgumentException("Only 3DES and AES symmetric keys are supported: " + sk.getAlgorithm());
+            }
         }
 
         CommandAPDU command = new CommandAPDU(CLA_GP, INS_PUT_KEY, replace ? version : 0x00, 0x01, bo.toByteArray(), 256);
